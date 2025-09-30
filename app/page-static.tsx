@@ -14,170 +14,49 @@ interface Article {
 // Función para obtener artículos directamente desde el RSS
 const fetchRSSArticles = async (): Promise<Article[]> => {
   try {
-    console.log('Fetching RSS articles...');
+    // Para hosting estático, usamos un proxy CORS o servicio externo
+    const proxyUrl = 'https://api.allorigins.win/get?url=';
+    const rssUrl = encodeURIComponent('https://www.tvenserio.com/feed/');
     
-    // Intentar diferentes proxies CORS
-    const proxies = [
-      'https://api.allorigins.win/get?url=',
-      'https://cors-anywhere.herokuapp.com/',
-      'https://api.codetabs.com/v1/proxy?quest='
-    ];
+    const response = await fetch(`${proxyUrl}${rssUrl}`);
+    const data = await response.json();
     
-    const rssUrl = 'https://www.tvenserio.com/feed/';
+    // Parse del XML
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(data.contents, 'text/xml');
+    const items = xmlDoc.querySelectorAll('item');
     
-    for (const proxyUrl of proxies) {
-      try {
-        const fullUrl = proxyUrl + encodeURIComponent(rssUrl);
-        console.log('Trying proxy:', proxyUrl);
-        
-        const response = await fetch(fullUrl);
-        
-        if (!response.ok) {
-          console.log('Proxy failed:', response.status);
-          continue;
-        }
-        
-        let xmlContent = '';
-        
-        // Diferentes formas de obtener el contenido según el proxy
-        if (proxyUrl.includes('allorigins')) {
-          const data = await response.json();
-          xmlContent = data.contents;
-        } else {
-          xmlContent = await response.text();
-        }
-        
-        console.log('XML content received, length:', xmlContent.length);
-        
-        // Parse del XML
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
-        
-        // Verificar si hay errores de parsing
-        const parseError = xmlDoc.querySelector('parsererror');
-        if (parseError) {
-          console.log('XML parse error:', parseError.textContent);
-          continue;
-        }
-        
-        const items = xmlDoc.querySelectorAll('item');
-        console.log('Found items:', items.length);
-        
-        if (items.length === 0) {
-          continue;
-        }
-        
-        // Obtener la fecha de hace 7 días
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        
-        const articles: Article[] = [];
-        
-        items.forEach((item, index) => {
-          if (index >= 15) return; // Limitar a 15 artículos para tener más opciones
-          
-          const title = item.querySelector('title')?.textContent || 'Sin título';
-          const link = item.querySelector('link')?.textContent || '#';
-          const pubDateStr = item.querySelector('pubDate')?.textContent || '';
-          
-          // Obtener descripción de diferentes elementos posibles
-          let description = item.querySelector('description')?.textContent || 
-                           item.querySelector('content\\:encoded')?.textContent ||
-                           item.querySelector('summary')?.textContent || 
-                           'Sin descripción';
-          
-          // Limpiar HTML y limitar texto
-          description = description.replace(/<[^>]*>/g, '').trim();
-          if (description.length > 150) {
-            description = description.substring(0, 150) + '...';
-          }
-          
-          // Verificar si el artículo es de los últimos 7 días
-          if (pubDateStr) {
-            const pubDate = new Date(pubDateStr);
-            if (pubDate >= sevenDaysAgo) {
-              articles.push({
-                title: title.trim(),
-                link: link.trim(),
-                pubDate: pubDateStr,
-                summary: description
-              });
-            }
-          }
+    // Obtener la fecha de hace 7 días
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const articles: Article[] = [];
+    
+    items.forEach((item, index) => {
+      if (index >= 10) return; // Limitar a 10 artículos
+      
+      const title = item.querySelector('title')?.textContent || 'Sin título';
+      const link = item.querySelector('link')?.textContent || '#';
+      const pubDateStr = item.querySelector('pubDate')?.textContent || '';
+      const description = item.querySelector('description')?.textContent || 'Sin descripción';
+      
+      // Verificar si el artículo es de los últimos 7 días
+      const pubDate = new Date(pubDateStr);
+      if (pubDate >= sevenDaysAgo) {
+        articles.push({
+          title,
+          link,
+          pubDate: pubDateStr,
+          summary: description.replace(/<[^>]*>/g, '').substring(0, 150) // Remover HTML y limitar texto
         });
-        
-        console.log('Articles found in last 7 days:', articles.length);
-        
-        // Si encontramos artículos, retornarlos
-        if (articles.length > 0) {
-          return articles.slice(0, 10); // Máximo 10 artículos
-        }
-        
-        // Si no hay artículos recientes, mostrar los más recientes en general
-        const allArticles: Article[] = [];
-        Array.from(items).slice(0, 10).forEach((item) => {
-          const title = item.querySelector('title')?.textContent || 'Sin título';
-          const link = item.querySelector('link')?.textContent || '#';
-          const pubDateStr = item.querySelector('pubDate')?.textContent || '';
-          
-          let description = item.querySelector('description')?.textContent || 
-                           item.querySelector('content\\:encoded')?.textContent ||
-                           'Sin descripción';
-          
-          description = description.replace(/<[^>]*>/g, '').trim();
-          if (description.length > 150) {
-            description = description.substring(0, 150) + '...';
-          }
-          
-          allArticles.push({
-            title: title.trim(),
-            link: link.trim(),
-            pubDate: pubDateStr,
-            summary: description
-          });
-        });
-        
-        console.log('Returning all recent articles:', allArticles.length);
-        return allArticles;
-        
-      } catch (proxyError) {
-        console.log('Proxy error:', proxyError);
-        continue;
       }
-    }
+    });
     
-    // Si todos los proxies fallan, retornar artículos de muestra
-    console.log('All proxies failed, returning sample articles');
-    return getSampleArticles();
-    
+    return articles;
   } catch (error) {
     console.error('Error fetching RSS:', error);
-    return getSampleArticles();
+    return [];
   }
-};
-
-// Función para obtener artículos de muestra cuando falla el RSS
-const getSampleArticles = (): Article[] => {
-  return [
-    {
-      title: "Los mejores estrenos de series de la semana",
-      link: "https://www.tvenserio.com",
-      pubDate: new Date().toISOString(),
-      summary: "Descubre las series más esperadas que llegan esta semana a las principales plataformas de streaming."
-    },
-    {
-      title: "Análisis: El futuro del entretenimiento digital",
-      link: "https://www.tvenserio.com",
-      pubDate: new Date(Date.now() - 86400000).toISOString(), // Ayer
-      summary: "Un análisis profundo sobre las tendencias que marcarán el rumbo del entretenimiento en los próximos años."
-    },
-    {
-      title: "Reseña: La serie del momento que todos comentan",
-      link: "https://www.tvenserio.com",
-      pubDate: new Date(Date.now() - 172800000).toISOString(), // Hace 2 días
-      summary: "Nuestra reseña completa de la serie que ha capturado la atención de millones de espectadores."
-    }
-  ];
 };
 
 export default function Home() {
@@ -193,8 +72,6 @@ export default function Home() {
       } catch (error) {
         console.error('Error loading articles:', error);
         setError('Error al cargar los artículos');
-        // En caso de error, mostrar artículos de muestra
-        setArticles(getSampleArticles());
       } finally {
         setLoading(false);
       }
@@ -288,12 +165,12 @@ export default function Home() {
           )}
 
           {error && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-700 mb-4">
-              <p className="text-sm">⚠️ Mostrando contenido de ejemplo. Los artículos en tiempo real se cargarán próximamente.</p>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+              {error}
             </div>
           )}
 
-          {!loading && (
+          {!loading && !error && (
             <div className="space-y-4">
               {articles.length === 0 ? (
                 <p className="text-gray-600 text-center py-8">
