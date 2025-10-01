@@ -74,7 +74,7 @@ const fetchRSSArticles = async (): Promise<Article[]> => {
         const articles: Article[] = [];
         
         items.forEach((item, index) => {
-          if (index >= 15) return; // Limitar a 15 artículos para tener más opciones
+          if (index >= 20) return; // Limitar a 20 artículos para tener más opciones
           
           const title = item.querySelector('title')?.textContent || 'Sin título';
           const link = item.querySelector('link')?.textContent || '#';
@@ -110,12 +110,12 @@ const fetchRSSArticles = async (): Promise<Article[]> => {
         
         // Si encontramos artículos, retornarlos
         if (articles.length > 0) {
-          return articles.slice(0, 10); // Máximo 10 artículos
+          return articles.slice(0, 15); // Máximo 15 artículos
         }
         
         // Si no hay artículos recientes, mostrar los más recientes en general
-        const allArticles: Article[] = [];
-        Array.from(items).slice(0, 10).forEach((item) => {
+  const allArticles: Article[] = [];
+  Array.from(items).slice(0, 15).forEach((item) => {
           const title = item.querySelector('title')?.textContent || 'Sin título';
           const link = item.querySelector('link')?.textContent || '#';
           const pubDateStr = item.querySelector('pubDate')?.textContent || '';
@@ -208,10 +208,13 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100">
       {/* Header */}
-      <div className="w-full bg-green-800 text-white py-8">
+  <div className="w-full bg-green-800 text-white py-1">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h1 className="text-4xl font-bold mb-2">TVenserio</h1>
-          <p className="text-green-100 text-lg">Tu portal de entretenimiento y series</p>
+          <img
+            src="/link-in-bio/tvenserio.png"
+            alt="Logo TVenserio"
+            className="mx-auto mb-2 w-48 h-48 object-contain drop-shadow-lg"
+          />
         </div>
       </div>
 
@@ -220,11 +223,15 @@ export default function Home() {
         {/* Profile Section */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border-l-4 border-green-600">
           <div className="text-center mb-6">
-            <div className="w-24 h-24 bg-green-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <span className="text-white text-3xl font-bold">TV</span>
+            <div className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden border-4 border-green-600 bg-white">
+              <img
+                src="/link-in-bio/avatar.png"
+                alt="Avatar TVenserio"
+                className="w-full h-full object-cover"
+              />
             </div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">TVenserio.com</h2>
-            <p className="text-gray-600">Análisis, reseñas y noticias del mundo del entretenimiento</p>
+            <p className="text-gray-600">Estamos. Creemos.</p>
           </div>
 
           {/* Social Links */}
