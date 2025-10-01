@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -210,10 +211,13 @@ export default function Home() {
       {/* Header */}
   <div className="w-full bg-green-800 text-white py-1">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <img
+          <Image
             src="/link-in-bio/tvenserio.png"
             alt="Logo TVenserio"
+            width={192}
+            height={192}
             className="mx-auto mb-2 w-48 h-48 object-contain drop-shadow-lg"
+            priority
           />
         </div>
       </div>
@@ -224,9 +228,11 @@ export default function Home() {
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border-l-4 border-green-600">
           <div className="text-center mb-6">
             <div className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center overflow-hidden border-4 border-green-600 bg-white">
-              <img
+              <Image
                 src="/link-in-bio/avatar.png"
                 alt="Avatar TVenserio"
+                width={96}
+                height={96}
                 className="w-full h-full object-cover"
               />
             </div>
